@@ -5,7 +5,7 @@ namespace Store.Memory //работа с бд и др.
 {
     public class BookRepository : IBookRepository
     {
-        private readonly Book[] books = new Book[]
+        private readonly Book[] books = new[]
         {
             new Book(1, "Art of Programming"),
             new Book(2, "Refactoring"),
