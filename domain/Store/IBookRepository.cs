@@ -8,6 +8,8 @@ namespace Store
 {
     public interface IBookRepository
     {
+        Book GetById(int id);
+
         //метод возвращающий массив книг по ISBN
         Book[] GetAllByIsbn(string isbn);
         //метод возвращающий массив книг по названию
