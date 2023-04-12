@@ -22,10 +22,10 @@ namespace Store.Tests
             //а выводится тип, т.е. дерево и потом сохраняется.
             //Т.е. мы перехватили вызов 2-х методов
             bookRepositoryStub.Setup(x => x.GetAllByIsbn(It.IsAny<string>()))
-                               .Returns(new[] { new Book(1, "", "", "") });
+                               .Returns(new[] { new Book(1, "", "", "", "", 0m) });
             //возратим массив типа Book c Id=2 и пустыми строками вместо названий
             bookRepositoryStub.Setup(x => x.GetAllByTitleOrAuthor(It.IsAny<string>()))
-                               .Returns(new[] { new Book(2, "", "", "") });
+                               .Returns(new[] { new Book(2, "", "", "", "", 0m) });
             //В объект BookService в качестве параметра передаем bookRepository
             //т.е. свойство Object нашей заглушки. Он выглядит точно так как 
             //BookRepository . Но вместо него выведет нужный нам массив
@@ -51,10 +51,10 @@ namespace Store.Tests
             //а выводится тип, т.е. дерево и потом сохраняется.
             //Т.е. мы перехватили вызов 2-х методов
             bookRepositoryStub.Setup(x => x.GetAllByIsbn(It.IsAny<string>()))
-                               .Returns(new[] { new Book(1, "", "", "") });
+                               .Returns(new[] { new Book(1, "", "", "", "", 0m) });
             //возратим массив типа Book c Id=2 и пустыми строками вместо названий
             bookRepositoryStub.Setup(x => x.GetAllByTitleOrAuthor(It.IsAny<string>()))
-                               .Returns(new[] { new Book(2, "", "", "") });
+                               .Returns(new[] { new Book(2, "", "", "", "", 0m) });
             //В объект BookService в качестве параметра передаем bookRepository
             //т.е. свойство Object нашей заглушки. Он выглядит точно так как 
             //BookRepository . Но вместо него выведет нужный нам массив
