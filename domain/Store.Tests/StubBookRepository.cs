@@ -12,7 +12,12 @@ namespace Store.Tests
         public Book[] ResultOfGetAllByIsbn { get; set; }
 
         public Book[] ResultOfGetAllByTitleOrAuthor { get; set; }
-        
+
+        public Book GetById(int id)
+        {
+            throw new NotImplementedException();
+        }
+
         Book[] IBookRepository.GetAllByIsbn(string isbn)
         {
             return ResultOfGetAllByIsbn;
