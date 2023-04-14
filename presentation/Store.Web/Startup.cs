@@ -21,10 +21,24 @@ namespace Store.Web
 
         public IConfiguration Configuration { get; }
 
-        // Встроенный депендеси инжекшен
+        // Встроенный депендеси инжекшен (настраивает зависимости)
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            //Распределенная память для хранения сессии
+            services.AddDirectoryBrowser();
+            services.AddSession(options => 
+            {
+                //Параметры сессии как она будет храниться в куках
+                //в данном случае 20 мин(время жизни сессии)
+                options.IdleTimeout = TimeSpan.FromMinutes(20);
+                //Настройка параметров куков
+                //не будет доступа из локальных js (только с сервера)
+                options.Cookie.HttpOnly = true;
+                //Получение согласия на сохранение данных в куках
+                options.Cookie.IsEssential = true;
+            });
+
             services.AddSingleton<IBookRepository, BookRepository>();
             services.AddSingleton<BookService>();
         }
@@ -49,6 +63,8 @@ namespace Store.Web
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseSession();//подключение сессий
 
             app.UseEndpoints(endpoints =>
             {
