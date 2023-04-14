@@ -11,8 +11,6 @@ namespace Store.Tests
     public class BookServiceTests
     {
         //Поиск по ISBN
-       
-
             [Fact]
         public void GetAllByQuery_WithIsbn_CallsGetAllByIsbn()
         {
