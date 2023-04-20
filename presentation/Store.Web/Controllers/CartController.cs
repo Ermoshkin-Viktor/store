@@ -7,28 +7,39 @@ namespace Store.Web.Controllers
     public class CartController : Controller
     {
         private readonly IBookRepository bookRepository;
+        private readonly IOrderRepository orderRepository;
 
-        public CartController(IBookRepository bookRepository)
+        public CartController(IBookRepository bookRepository, IOrderRepository orderRepository)
         {
             this.bookRepository = bookRepository;
+            this.orderRepository = orderRepository;
         }
         //добавляем книгу в корзину
         public IActionResult Add(int id)
         {
-            var book = bookRepository.GetById(id);
+            
+
+            Order order;
             Cart cart;
-            //Если корзины с таким id нет
-            if (!HttpContext.Session.TryGetCart(out cart))
-                cart = new Cart();//создаем новую пустую корзину
-            //Если книга с таким id уже есть в корзине
-            if (cart.Items.ContainsKey(id))
-                //то увеличиваем к-во на единицу
-                cart.Items[id]++;
+            //Если корзина с таким id есть
+            if (HttpContext.Session.TryGetCart(out cart))
+            {
+                order = orderRepository.GetById(cart.OrderId);
+            }
             else
-                //иначе к-во книг = 1
-                cart.Items[id] = 1;
-            //и стоимость корзины увеличиваем на цену книги
-            cart.Amount += book.Price;
+            {
+                //Если нет, создаем новый заказ
+                order = orderRepository.Create();
+                //и новую корзину
+                cart = new Cart(order.Id);
+            }
+            //загружаем книгу из репозитория
+            var book = bookRepository.GetById(id);
+            order.AddItem(book, 1); 
+            orderRepository.Update(order);
+
+            cart.TotalCount = order.TotalCount;
+            cart.TotalPrice= order.TotalPrice;
             //сохраняем сессию
             HttpContext.Session.Set(cart);
 
