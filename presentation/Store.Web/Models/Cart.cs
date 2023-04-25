@@ -4,10 +4,17 @@ namespace Store.Web.Models
 {
     public class Cart
     {                        
-        //Словарь у которого ключи(Id) и значения(количество) целые числа
-        public IDictionary<int, int> Items { get; set; } = new Dictionary<int, int>();
+        public int OrderId { get; }
 
-        //Сумма товаров хранящихся в корзине
-        public decimal Amount { get; set; } 
+        public int TotalCount { get; set; }
+
+        public decimal TotalPrice { get; set; }
+
+        public Cart(int orderId)
+        {
+            OrderId= orderId;
+            TotalCount= 0;
+            TotalPrice= 0m;
+        }
     }
 }

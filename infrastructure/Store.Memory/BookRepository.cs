@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Store.Memory //работа с бд и др.
@@ -44,6 +45,15 @@ namespace Store.Memory //работа с бд и др.
             {
                 return new Book[0];
             }
+        }
+
+        public Book[] GetAllByIds(IEnumerable<int> bookIds)
+        {
+            var foundBooks = from book in books
+                             join bookId in bookIds on 
+                                  book.Id equals bookId
+                             select book;
+            return foundBooks.ToArray();
         }
     }
 }
