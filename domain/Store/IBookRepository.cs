@@ -14,5 +14,7 @@ namespace Store
         Book[] GetAllByIsbn(string isbn);
         //метод возвращающий массив книг по названию
         Book[] GetAllByTitleOrAuthor(string titleOrAuthor);
+
+        Book[] GetAllByIds(IEnumerable<int> bookIds);
     }
 }

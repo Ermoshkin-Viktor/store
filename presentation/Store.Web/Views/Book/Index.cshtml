@@ -11,7 +11,7 @@
 <p>@Model.Description</p>
 
 <p>Цена<strong>@Model.Price</strong></p>
-<form action="@Url.Action("Add", "Cart")" method="post">
+<form action="@Url.Action("AddItem", "Order")" method="post">
     <input type="hidden" name="Id" value="@Model.Id"/>
     <button class="btn btn-outline-success" type="submit">В корзину</button>
 </form>

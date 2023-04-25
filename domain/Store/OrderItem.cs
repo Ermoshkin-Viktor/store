@@ -11,6 +11,7 @@ namespace Store
         public int BookId { get; }
         //К-во книг в заказе
         public int Count { get; }
+
         //Цена
         public decimal Price { get; }
 
