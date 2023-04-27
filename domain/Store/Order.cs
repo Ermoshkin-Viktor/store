@@ -53,7 +53,7 @@ namespace Store
             else
             {
                 //если такая книжка в заказе есть, то старую запись удаляем,
-                //а новую добавляем уеличивая количество
+                //а новую добавляем увеличивая количество
                 items.Remove(item);
                 items.Add(new OrderItem(book.Id, item.Count + count, book.Price));
             }
