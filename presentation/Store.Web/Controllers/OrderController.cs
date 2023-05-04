@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Store.Web.Models;
+using System;
 using System.Linq;
 
 namespace Store.Web.Controllers
@@ -54,13 +55,48 @@ namespace Store.Web.Controllers
             };
         }
 
-        //добавляем книгу к существующему заказу
-        public IActionResult AddItem(int id)
+        public IActionResult AddItem(int bookId, int count = 1)
+        {
+            (Order order, Cart cart) = GetOrCreateOrderAndCart();
+            //получаем книгу из репозитория
+            var book = bookRepository.GetById(bookId);
+
+            order.AddOrUpdateItem(book, count);
+
+            //обновляем в базе
+            SaveOrderAndCart(order, cart);
+
+            return RedirectToAction("Index", "Book", new { id = bookId });
+        }
+
+        [HttpPost]
+        //обновление
+        public IActionResult UpdateItem(int bookId, int count)
+        {
+            (Order order, Cart cart) = GetOrCreateOrderAndCart();
+            //получаем книгу, увеличиваем к-во          
+            order.GetItem(bookId).Count = count;
+            //обновляем в базе
+            SaveOrderAndCart(order, cart);
+
+            return RedirectToAction("Index", "Order");
+        }
+
+        private void SaveOrderAndCart(Order order, Cart cart)
+        {
+            orderRepository.Update(order);
+            //обновляем к-во и цену
+            cart.TotalCount = order.TotalCount;
+            cart.TotalPrice = order.TotalPrice;
+            //сохраняем сессию
+            HttpContext.Session.Set(cart);
+        }
+
+        private (Order order, Cart cart) GetOrCreateOrderAndCart()
         {
             Order order;
-            Cart cart;
             //Если корзина с таким id есть
-            if (HttpContext.Session.TryGetCart(out cart))
+            if (HttpContext.Session.TryGetCart(out Cart cart))
             {
                 order = orderRepository.GetById(cart.OrderId);
             }
@@ -71,17 +107,18 @@ namespace Store.Web.Controllers
                 //и новую корзину
                 cart = new Cart(order.Id);
             }
-            //загружаем книгу из репозитория
-            var book = bookRepository.GetById(id);
-            order.AddItem(book, 1); 
-            orderRepository.Update(order);
+            return (order, cart);
+        }
 
-            cart.TotalCount = order.TotalCount;
-            cart.TotalPrice= order.TotalPrice;
-            //сохраняем сессию
-            HttpContext.Session.Set(cart);
+        public IActionResult RemoveItem(int bookid)
+        {
+            (Order order, Cart cart) = GetOrCreateOrderAndCart();
 
-            return RedirectToAction("Index", "Book", new { id });
+            order.RemoveItem(bookid);
+
+            SaveOrderAndCart(order, cart);
+            
+            return RedirectToAction("Index", "Order");
         }
     }
 }
