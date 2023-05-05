@@ -13,6 +13,11 @@ namespace Store.Tests
 
         public Book[] ResultOfGetAllByTitleOrAuthor { get; set; }
 
+        public Book[] GetAllByIds(IEnumerable<int> bookIds)
+        {
+            throw new NotImplementedException();
+        }
+
         public Book GetById(int id)
         {
             throw new NotImplementedException();
