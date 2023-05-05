@@ -65,7 +65,7 @@ namespace Store
             {
                 //меняем к-во
                 items[index].Count += count;
-            }           
+            }          
         }
 
         //Удаление всей товарной позиции(книга)
