@@ -26,7 +26,7 @@
                 <td class="text-right">@Model.Items[i].Count</td>
                 <td class="text-right">@Model.Items[i].Price</td>
                                    <td class="text-center">
-                    <form class="form-inline" action="@Url.Action("RemoveItem", "Order")" method="post">
+                    <form class="form-inline" action="@Url.Action(nameof(OrderController.RemoveItem), "Order")" method="post">
                             <input type="hidden" name="bookId" value="@Model.Items[i].BookId" />
                             <button class="btn btn-danger" type="submit">Удалить</button>
                         </form>
@@ -43,7 +43,7 @@
     </tfoot>
 </table>
 
-<form action="@Url.Action("SendConfirmationCode")" method="post">
+<form action="@Url.Action(nameof(OrderController.SendConfirmationCode))" method="post">
     <input type="hidden" name="id" value="@Model.Id" />
     <div class="form-group">
         <label for="cellPhone">Мобильный телефон</label>

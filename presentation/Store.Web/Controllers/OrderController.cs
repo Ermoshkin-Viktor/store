@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Store.Contractors;
 using Store.Messages;
 using Store.Web.Models;
 using System;
@@ -16,13 +17,17 @@ namespace Store.Web.Controllers
     {
         private readonly IBookRepository bookRepository;
         private readonly IOrderRepository orderRepository;
+        //Список всех зарегистрированных сервисов доставки
+        private readonly IEnumerable<IDeliveryService> deliveryServices;
         private readonly INotificationService notificationService;
 
         public OrderController(IBookRepository bookRepository, IOrderRepository orderRepository,
+                         IEnumerable<IDeliveryService> deliveryServices,
                          INotificationService notificationService)
         {
             this.bookRepository = bookRepository;
             this.orderRepository = orderRepository;
+            this.deliveryServices = deliveryServices;
             this.notificationService = notificationService;
         }
 
@@ -169,7 +174,7 @@ namespace Store.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult StartDelivery(int id, string cellPhone, int code)
+        public IActionResult Confirmate(int id, string cellPhone, int code)
         {
             //загружаем код из сессии с предыдущего шага
             int? storedCode = HttpContext.Session.GetInt32(cellPhone); 
@@ -202,8 +207,57 @@ namespace Store.Web.Controllers
                         });
             }
 
-            //
-            return View();
+            //todo: сохранить CellPhone
+
+            //удаляем из сессии номер телефона
+            HttpContext.Session.Remove(cellPhone);
+
+            var model = new DeliveryModel
+            {
+                OrderId= id,
+                //словарь- ключ:поле UniqueCode, а значение:название
+                Methods = deliveryServices.ToDictionary(service => service.UniqueCode,
+                                                       service => service.Title),
+            };
+
+            return View("DeliveryMethod", model);
+        }
+
+        //Загрузка первой формы
+        [HttpPost]
+        public IActionResult StartDelivery(int id, string uniqueCode)
+        {
+            //Загружаем необходимый нам deliveryService у которого
+            //уникальный код совпадает с переданным
+            var deliveryService = deliveryServices
+                    .Single(service => service.UniqueCode == uniqueCode);
+            //загружаем ордер
+            var order = orderRepository.GetById(id);
+            //создаем первую форму
+            var form = deliveryService.CreateForm(order);
+
+            return View("DeliveryStep", form);
+        }
+
+        //Загрузка последующей формы
+        [HttpPost]
+        public IActionResult NextDelivery(int id, string uniqueCode,
+                   int step, Dictionary<string, string> values)
+        {
+            //Загружаем необходимый нам deliveryService у которого
+            //уникальный код совпадает с переданным
+            var deliveryService = deliveryServices
+                    .Single(service => service.UniqueCode == uniqueCode);
+            var form = deliveryService.MoveNext(id, step, values);
+
+            //если форма финальная
+            if(form.IsFinal)
+            {
+                //переход к следующему шагу(сохраняем в заказе)
+                return null;
+            }
+            //иначе продолжаем
+            return View("DeliveryStep", form);
         }
     }
 }
