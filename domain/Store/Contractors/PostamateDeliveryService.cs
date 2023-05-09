@@ -15,7 +15,7 @@ namespace Store.Contractors
         };
 
         private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> postamates = 
-                         new Dictionary<string, IReadOnlyDictionary<string, string>>
+        new Dictionary<string, IReadOnlyDictionary<string, string>>
         {
             {
                 "1",
