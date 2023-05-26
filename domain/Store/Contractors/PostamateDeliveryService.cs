@@ -8,7 +8,8 @@ namespace Store.Contractors
 {
     public class PostamateDeliveryService : IDeliveryService
     {
-        private static IReadOnlyDictionary<string, string> cities = new Dictionary<string, string>
+        private static IReadOnlyDictionary<string, string> cities =
+                                                   new Dictionary<string, string>
         {
             {"1", "Москва" },
             {"2", "Санкт-Петербург" },
@@ -40,6 +41,35 @@ namespace Store.Contractors
 
         public string Title => "Доставка через постаматы в Москве и Санкт-Петербурге";
 
+        public OrderDelivery GetDelivery(Form form)
+        {
+            if(form.UniqueCode != UniqueCode || !form.IsFinal)
+            {
+                throw new InvalidOperationException("Invalid form.");
+            }
+            //идентификатор города
+            var cityId = form.Fields.Single(field => 
+                                      field.Name == "city").Value;
+            //по идентификатору получим имя
+            var cityName = cities[cityId];
+            //получим постaмат
+            var postamateId = form.Fields.Single(field => 
+                                  field.Name == "postamate").Value;
+            var postamateName = postamates[cityId][postamateId];
+            // заполняем поля которые будем хранить вместе с заказом
+            var parameters = new Dictionary<string, string>
+            {
+                { nameof(cityId), cityId},
+                { nameof(cityName), cityName},
+                { nameof(postamateId), postamateId},
+                { nameof(postamateName), postamateName},
+            };
+            //текстовое описание которое будет видеть пользователь
+            var description = $"Город: {cityName}\nПостамат: {postamateName}";
+
+            return new OrderDelivery(UniqueCode, description, 150m, parameters);
+        }
+
         public Form CreateForm(Order order)
         {
             if(order == null)
@@ -51,7 +81,7 @@ namespace Store.Contractors
             });
         }
 
-        public Form MoveNext(int orderId, int step, 
+        public Form MoveNextForm(int orderId, int step, 
                              IReadOnlyDictionary<string, string> values)
         {
             if (step == 1)

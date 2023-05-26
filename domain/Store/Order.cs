@@ -11,19 +11,26 @@ namespace Store
         public int Id { get; }
 
         private List<OrderItem> items;
+
         //Нельзя изменять
         public IReadOnlyCollection<OrderItem> Items 
         {
             get { return items; } 
         }
 
+        public string CellPhone { get; set; }
+        //поле заполняет контроллер
+        public OrderDelivery Delivery { get; set; }
+
+        public OrderPayment Payment { get; set; }
+
         //Сумма количества всех экземпляров книг
-        public int TotalCount => items.Sum(item => item.Count);
+        public int TotalCount => items.Sum(item => item.Count); 
         
-        //Общая цена заказа
+        //Общая цена заказа с доставкой
         public decimal TotalPrice
-        {
-            get { return items.Sum(item => item.Price * item.Count); }
+        {                                                          //если знач =null то подставляем знач. 0m
+            get { return items.Sum(item => item.Price * item.Count) + (Delivery?.Amount ?? 0m) ; }
         }
 
         public Order(int id, IEnumerable<OrderItem> items)
