@@ -14,7 +14,7 @@ namespace Store.Contractors
 
         public int Step { get; }//шаг
 
-        //Способ выяснить-последний ли это экран?
+        //Способ выяснить-последний ли это экран?(флаг)
         public bool IsFinal { get; }
 
         public IReadOnlyList<Field> Fields { get; }

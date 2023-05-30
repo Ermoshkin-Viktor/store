@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Store.Contractors;
 using Store.Messages;
+using Store.Web.Contractors;
 using Store.Web.Models;
 using System;
 using System.Collections.Generic;
@@ -19,15 +20,21 @@ namespace Store.Web.Controllers
         private readonly IOrderRepository orderRepository;
         //Список всех зарегистрированных сервисов доставки
         private readonly IEnumerable<IDeliveryService> deliveryServices;
+        private readonly IEnumerable<IPaymentService> paymentServices;
+        private readonly IEnumerable<IWebContractorService> webContractorServices;
         private readonly INotificationService notificationService;
 
         public OrderController(IBookRepository bookRepository, IOrderRepository orderRepository,
                          IEnumerable<IDeliveryService> deliveryServices,
+                         IEnumerable<IPaymentService> paymentServices,
+                         IEnumerable<IWebContractorService> webContractorServices,
                          INotificationService notificationService)
         {
             this.bookRepository = bookRepository;
             this.orderRepository = orderRepository;
             this.deliveryServices = deliveryServices;
+            this.paymentServices = paymentServices;
+            this.webContractorServices = webContractorServices;
             this.notificationService = notificationService;
         }
 
@@ -207,7 +214,11 @@ namespace Store.Web.Controllers
                         });
             }
 
-            //todo: сохранить CellPhone
+            // сохранить информацию о номере телефона
+            var order = orderRepository.GetById(id);
+            order.CellPhone = cellPhone;
+            //сохранить в базе данных
+            orderRepository.Update(order);
 
             //удаляем из сессии номер телефона
             HttpContext.Session.Remove(cellPhone);
@@ -248,16 +259,72 @@ namespace Store.Web.Controllers
             //уникальный код совпадает с переданным
             var deliveryService = deliveryServices
                     .Single(service => service.UniqueCode == uniqueCode);
-            var form = deliveryService.MoveNext(id, step, values);
+            var form = deliveryService.MoveNextForm(id, step, values);
 
             //если форма финальная
             if(form.IsFinal)
             {
                 //переход к следующему шагу(сохраняем в заказе)
-                return null;
+                var order = orderRepository.GetById(id);
+                order.Delivery = deliveryService.GetDelivery(form);
+                orderRepository.Update(order);
+
+                var model = new DeliveryModel
+                {
+                    OrderId = id,
+                    //словарь- ключ:поле UniqueCode, а значение:название
+                    Methods = paymentServices.ToDictionary(service => service.UniqueCode,
+                                                      service => service.Title),
+                };
+
+                return View("PaymentMethod", model);
             }
             //иначе продолжаем
             return View("DeliveryStep", form);
+        }
+
+        [HttpPost]
+        public IActionResult StartPayment(int id, string uniqueCode)
+        {
+            //получаем единственную службу с таким именем и она точно есть
+            var paymentService = paymentServices.Single(service => service.UniqueCode == uniqueCode);
+            var order = orderRepository.GetById(id);
+
+            var form = paymentService.CreateForm(order);
+            
+            //мы точно не знаем есть ли такая служба
+            var webContractorService = webContractorServices.SingleOrDefault(service => service.UniqueCode == uniqueCode);
+            if(webContractorService != null)
+            {
+                return Redirect(webContractorService.GetUri);
+            }
+            return View("PaymentStep", form);
+        }
+
+        [HttpPost]
+        public IActionResult NextPayment(int id, string uniqueCode, int step, Dictionary<string, string> values)
+        {
+            var paymentService = paymentServices.Single(service => service.UniqueCode == uniqueCode);
+
+            var form = paymentService.MoveNextForm(id, step, values);
+
+            if (form.IsFinal)
+            {
+                var order = orderRepository.GetById(id);
+                order.Payment = paymentService.GetPayment(form);
+                orderRepository.Update(order);
+
+                return View("Finish");
+            }
+
+            return View("PaymentStep", form);
+        }
+
+        public IActionResult Finish()
+        {
+            HttpContext.Session.RemoveCart();
+
+            return View();
         }
     }
 }
