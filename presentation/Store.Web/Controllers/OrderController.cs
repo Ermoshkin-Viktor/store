@@ -6,10 +6,8 @@ using Store.Contractors;
 using Store.Messages;
 using Store.Web.Contractors;
 using Store.Web.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 
 namespace Store.Web.Controllers
@@ -83,7 +81,10 @@ namespace Store.Web.Controllers
             //получаем книгу из репозитория
             var book = bookRepository.GetById(bookId);
 
-            order.AddOrUpdateItem(book, count);
+            if (order.Items.TryGet(bookId, out OrderItem orderItem))
+                orderItem.Count += count;
+            else
+                order.Items.Add(bookId, book.Price, count);
 
             //обновляем в базе
             SaveOrderAndCart(order, cart);
@@ -97,7 +98,7 @@ namespace Store.Web.Controllers
         {
             (Order order, Cart cart) = GetOrCreateOrderAndCart();
             //получаем книгу, увеличиваем к-во          
-            order.GetItem(bookId).Count = count;
+            order.Items.Get(bookId).Count = count;
             //обновляем в базе
             SaveOrderAndCart(order, cart);
 
@@ -137,7 +138,7 @@ namespace Store.Web.Controllers
         {
             (Order order, Cart cart) = GetOrCreateOrderAndCart();
 
-            order.RemoveItem(bookid);
+            order.Items.Remove(bookid);
 
             SaveOrderAndCart(order, cart);
 
