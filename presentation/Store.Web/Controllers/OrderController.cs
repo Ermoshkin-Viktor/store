@@ -80,7 +80,7 @@ namespace Store.Web.Controllers
             (Order order, Cart cart) = GetOrCreateOrderAndCart();
             //получаем книгу из репозитория
             var book = bookRepository.GetById(bookId);
-
+            //если обнаружили запись, то добавляем к-во
             if (order.Items.TryGet(bookId, out OrderItem orderItem))
                 orderItem.Count += count;
             else
@@ -118,7 +118,7 @@ namespace Store.Web.Controllers
                 //Если нет, создаем новый заказ
                 order = orderRepository.Create();
                 //и новую корзину
-                cart = new Cart(order.Id);
+                cart = new Cart(order.Id, 0, 0m);
             }
             return (order, cart);
         }
@@ -126,9 +126,10 @@ namespace Store.Web.Controllers
         private void SaveOrderAndCart(Order order, Cart cart)
         {
             orderRepository.Update(order);
+
             //обновляем к-во и цену
-            cart.TotalCount = order.TotalCount;
-            cart.TotalPrice = order.TotalPrice;
+            cart = new Cart(order.Id, order.TotalCount, order.TotalPrice);
+            
             //сохраняем сессию
             HttpContext.Session.Set(cart);
         }
