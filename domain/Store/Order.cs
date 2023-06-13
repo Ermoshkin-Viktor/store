@@ -1,24 +1,83 @@
-﻿using System;
+﻿using Store.Data;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Store
 {
     public class Order
-    {
-        public int Id { get; }
+    { 
+        //Создаем объект один раз и не можем пересоздать
+        //А поля объекта изменять можем
+        private readonly OrderDto dto;
 
-        //Нельзя изменять
-        public OrderItemCollection Items { get; }
+        public int Id => dto.Id;
+
+        public string CellPhone
+        {
+            get => dto.CellPhone;
+            set
+            {
+                if(string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException(nameof(CellPhone));
+                
+                dto.CellPhone = value;
+            }
+        }
         
+        public OrderDelivery Delivery
+        {
+            get
+            {
+                if(dto.DeliveryUnicueCode == null)
+                    return null;
+                //Собираем объект OrderDelivery
+                return new OrderDelivery(
+                    dto.DeliveryUnicueCode,
+                    dto.DeliveryDescription,
+                    dto.DeliveryPrice,
+                    dto.DeliveryParameters);
+            }
+            //при изменении null присвоить нельзя
+            set
+            {
+                if(value == null)
+                    throw new ArgumentException(nameof(Delivery));
 
-        public string CellPhone { get; set; }
-        //поле заполняет контроллер
-        public OrderDelivery Delivery { get; set; }
+                dto.DeliveryUnicueCode = value.UniqueCode;
+                dto.DeliveryDescription = value.Description;
+                dto.DeliveryPrice = value.Price;
+                dto.DeliveryParameters = value.Parameters
+                            .ToDictionary(p => p.Key, p => p.Value);
+            }
+        }
 
-        public OrderPayment Payment { get; set; }
+        public OrderPayment Payment
+        {
+            get
+            {
+                if (dto.PaymentServiceName == null)
+                    return null;
+                //Собираем объект OrderDelivery
+                return new OrderPayment(
+                    dto.PaymentServiceName,
+                    dto.PaymentDescription,
+                    dto.PaymentParameters);
+            }
+            //при изменении null присвоить нельзя
+            set
+            {
+                if (value == null)
+                    throw new ArgumentException(nameof(Delivery));
+
+                dto.PaymentServiceName = value.UniqueCode;
+                dto.PaymentDescription = value.Description;
+                dto.PaymentParameters = value.Parameters
+                            .ToDictionary(p => p.Key, p => p.Value);
+            }
+        }
+        //Позиция заказа
+        public OrderItemCollection Items { get; }
 
         //Сумма количества всех экземпляров книг
         public int TotalCount => Items.Sum(item => item.Count); 
@@ -26,69 +85,25 @@ namespace Store
         //Общая цена заказа с доставкой
         public decimal TotalPrice
         {                                                          //если знач =null то подставляем знач. 0m
-            get { return Items.Sum(item => item.Price * item.Count) + (Delivery?.Amount ?? 0m) ; }
+            get { return Items.Sum(item => item.Price * item.Count) + (Delivery?.Price ?? 0m) ; }
         }
 
-        public Order(int id, IEnumerable<OrderItem> items)
-        { 
-            Id = id;
-            this.Items = new OrderItemCollection(items);
+        public Order(OrderDto dto)
+        {
+            this.dto = dto;
+            Items = new OrderItemCollection(dto);
         }
-
         
-        //public OrderItem GetItem(int bookId)
-        //{
-        //    int index = Items.FindIndex(item => item.BookId== bookId);
-        //    //если элемент не найден
-        //    if (index == -1)
-        //        ThrowBookException("Book not found", bookId);
-            
-        //    //иначе: возвращаем
-        //    return items[index];
-        //}
+        public static class DtoFactory
+        {
+            public static OrderDto Create() => new OrderDto();
+        }
 
-        ////Добавление позиции к заказу
-        //public void AddOrUpdateItem(Book book, int count)
-        //{
-        //    if (book == null)
-        //        throw new ArgumentNullException(nameof(book));
+        public static class Mapper
+        {
+            public static Order Map(OrderDto dto) => new Order(dto);
 
-        //    //смотрим есть ли такая книга в заказе
-        //    int index = items.FindIndex(item => item.BookId == book.Id);
-        //    //если элемент не найден
-        //    if (index == -1)
-        //    {
-        //        items.Add(new OrderItem(book.Id, book.Price, count));
-        //    }
-        //    else
-        //    {
-        //        //меняем к-во
-        //        items[index].Count += count;
-        //    }          
-        //}
-
-        ////Удаление всей товарной позиции(книга)
-        //public void RemoveItem(int bookId)
-        //{          
-        //   //Получаем индекс
-        //   int index = items.FindIndex(item => item.BookId == bookId);
-
-        //    if(index == -1)
-        //        ThrowBookException("Order does not contain specified item.", bookId);
-             
-        //    //Если найден то мы удаляем индекс
-        //    items.RemoveAt(index);
-        //}
-
-        //private void ThrowBookException(string message, int bookId)
-        //{
-        //    var exception = new InvalidOperationException(message);
-
-        //    exception.Data["BookId"] = bookId;
-           
-        //    throw exception;
-        //}
-
-       
+            public static OrderDto Map(Order domain) => domain.dto;
+        }
     }
 }
