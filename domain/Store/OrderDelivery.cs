@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Store
 {
@@ -13,7 +11,7 @@ namespace Store
 
         public string Description { get; }
         //стоимость доставки
-        public decimal Amount { get; }
+        public decimal Price { get; }
         //для хранения информации (нельзя менять)
         public IReadOnlyDictionary<string, string> Parameters { get; } = 
                  new Dictionary<string, string>();
@@ -31,7 +29,7 @@ namespace Store
                 throw new ArgumentNullException(nameof(parameters));
             UniqueCode = uniqueCode ;
             Description = description ;
-            Amount = amount ;
+            Price = amount ;
             Parameters = parameters ;
         }
     }

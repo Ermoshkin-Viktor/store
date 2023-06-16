@@ -1,23 +1,27 @@
-﻿using System;
+﻿using Store.Data;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Store
 {
     public class OrderItemCollection : IReadOnlyCollection<OrderItem>
     {
+        private readonly OrderDto orderDto;
+
         private readonly List<OrderItem> items;
 
-        //IEnumerable<OrderItem> items - итератор позиций в заказе
-        public OrderItemCollection(IEnumerable<OrderItem> items)
+        
+        public OrderItemCollection(OrderDto orderDto)
         {
-            if (items == null)
-                throw new ArgumentNullException(nameof(items));
-            //из итератора позиции заказа заносим в список
-            this.items = new List<OrderItem>(items);
+            if (orderDto == null)
+                throw new ArgumentNullException(nameof(orderDto));
+            
+            this.orderDto = orderDto;
+            items = orderDto.Items
+                            .Select(x => OrderItem.Mapper.Map(x))
+                            .ToList();
         }
         //возвращает количество элементов
         public int Count => items.Count;
@@ -56,12 +60,19 @@ namespace Store
             return true;
         }
 
-        public OrderItem Add(int bookId, decimal bookPrice, int count)
+        public OrderItem Add(int bookId, decimal price, int count)
         {
             if (TryGet(bookId, out OrderItem orderItem))
-                throw new InvalidOperationException("Book alread");
+                throw new InvalidOperationException("Book already exists");
 
-            orderItem = new OrderItem(bookId, bookPrice, count);
+            //Создаем orderItemDto для новой книги
+            var orderItemDto = OrderItem.DtoFactory.Create(orderDto, bookId,
+                                                           price, count);
+            //Записываем его к родительскому объекту
+            orderDto.Items.Add(orderItemDto);
+
+            //Также записываем в список OrderItem
+            orderItem = OrderItem.Mapper.Map(orderItemDto);
             items.Add(orderItem);
 
             return orderItem;
@@ -69,7 +80,14 @@ namespace Store
 
         public void Remove(int bookId)
         {
-            items.Remove(Get(bookId));
+            var index = items.FindIndex(item => item.BookId == bookId);
+            if (index == -1)
+                throw new InvalidOperationException("Can't find book to remove from order.");
+
+            //Удаляем из DTO
+            orderDto.Items.RemoveAt(index);
+            //Удаляем из OrderItem
+            items.RemoveAt(index);
         }
     }
 }
