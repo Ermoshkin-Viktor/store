@@ -19,7 +19,13 @@ namespace Store.Data.Ef
                 },
                 ServiceLifetime.Transient
             );
-
+            //Словарь будет создаваться на каждый запрос пользователя
+            services.AddScoped<Dictionary<Type, StoreDbContext>>();
+            //DbContext будет создаваться один на каждый репозиторий и
+            //на каждый запрос
+            services.AddSingleton<DbContextFactory>();
+            //Репозитории будут создаваться и храниться по одному экземпляру
+            //на всю работу приложения 
             services.AddSingleton<IBookRepository, BookRepository>();
             services.AddSingleton<IOrderRepository, OrderRepository>();
 

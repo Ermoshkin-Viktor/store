@@ -56,9 +56,9 @@ namespace Store.Web.Controllers
         //обновление
         public IActionResult UpdateItem(int bookId, int count)
         {
-            orderService.UpdateBook(bookId, count);
+            var model = orderService.UpdateBook(bookId, count);
 
-            return View("Index", "Order");
+            return View("Index", model);
         }
 
         [HttpPost]
@@ -66,7 +66,7 @@ namespace Store.Web.Controllers
         {
             var model = orderService.RemoveBook( bookId);
 
-            return View("Index", "Order");
+            return View("Index", model);
         }
 
         [HttpPost]
