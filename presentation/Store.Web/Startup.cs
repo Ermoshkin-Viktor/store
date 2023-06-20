@@ -26,7 +26,11 @@ namespace Store.Web
         // Встроенный депендеси инжекшен (настраивает зависимости)
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
+            services.AddControllersWithViews(options =>
+            {
+                //Добавление фильтра
+                options.Filters.Add(typeof(ExceptionFilter));
+            });
             //Обращение к HttpContext
             services.AddHttpContextAccessor();
             //Распределенная память для хранения сессии
@@ -56,7 +60,8 @@ namespace Store.Web
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
+           // if (env.IsDevelopment())
+            if(false)
             {
                 app.UseDeveloperExceptionPage();
                 
