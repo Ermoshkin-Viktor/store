@@ -1,47 +1,46 @@
 ﻿using Store.Web.App;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
-
-namespace Store //предметная область
+namespace Store.Web.App //предметная область
 {//Служба
     //Новый уровень косвенности (прикладной уровень)
     //Сервис получает параметры из представления и выводит модель
     public class BookService
     {
         private readonly IBookRepository bookRepository;
-
         public BookService(IBookRepository bookRepository)
         {
             this.bookRepository = bookRepository;
         }
 
-        public IReadOnlyCollection<BookModel> GetAllByQuery(string query)
+        public async Task<BookModel> GetByIdAsync(int id)
         {
-            var books = Book.IsIsbn(query)
-                ? bookRepository.GetAllByIsbn(query)
-                : bookRepository.GetAllByTitleOrAuthor(query);
+            var book = await bookRepository.GetByIdAsync(id);
 
-            return books.Select(Map)
-                .ToArray();
-        }
-
-        public BookModel GetById(int id)
-        {
-            var book = bookRepository.GetById(id);
             return Map(book);
         }
 
+        public async Task<IReadOnlyCollection<BookModel>> GetAllByQueryAsync(string query)
+        {
+            var books = Book.IsIsbn(query)
+                      ? await bookRepository.GetAllByIsbnAsync(query)
+                      : await bookRepository.GetAllByTitleOrAuthorAsync(query);
+
+            return books.Select(Map)
+                        .ToArray();
+        }
         private BookModel Map(Book book)
         {
             return new BookModel
             {
-                Id= book.Id,
-                Isbn= book.Isbn,
-                Title= book.Title,
-                Author= book.Author,
-                Description= book.Description,
-                Price= book.Price,
+                Id = book.Id,
+                Isbn = book.Isbn,
+                Title = book.Title,
+                Author = book.Author,
+                Description = book.Description,
+                Price = book.Price,
             };
         }
     }

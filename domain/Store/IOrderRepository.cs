@@ -9,10 +9,10 @@ namespace Store
     public interface IOrderRepository
     {
         //Создание заказа
-        Order Create();
+        Task<Order> CreateAsync();
         //Загрузка заказа
-        Order GetById(int id);
+        Task<Order> GetByIdAsync(int id);
         //обновление
-        void Update(Order order);
+        Task UpdateAsync(Order order);
     }
 }
