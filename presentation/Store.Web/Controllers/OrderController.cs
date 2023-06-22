@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Store.Web.Controllers
 {
@@ -35,87 +36,75 @@ namespace Store.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            if (orderService.TryGetModel(out OrderModel model))
+            var (hasValue, model) = await orderService.TryGetModelAsync();
+            if (hasValue)
                 return View(model);
 
             return View("Empty");
         }
 
-        //Добавление книги
         [HttpPost]
-        public IActionResult AddItem(int bookId, int count = 1)
+        public async Task<IActionResult> AddItem(int bookId, int count = 1)
         {
-            orderService.AddBook(bookId, count);
+            await orderService.AddBookAsync(bookId, count);
 
             return RedirectToAction("Index", "Book", new { id = bookId });
         }
 
         [HttpPost]
-        //обновление
-        public IActionResult UpdateItem(int bookId, int count)
+        public async Task<IActionResult> UpdateItem(int bookId, int count)
         {
-            var model = orderService.UpdateBook(bookId, count);
+            var model = await orderService.UpdateBookAsync(bookId, count);
 
             return View("Index", model);
         }
 
         [HttpPost]
-        public IActionResult RemoveItem(int bookId)
+        public async Task<IActionResult> RemoveItem(int bookId)
         {
-            var model = orderService.RemoveBook( bookId);
+            var model = await orderService.RemoveBookAsync(bookId);
 
             return View("Index", model);
         }
 
         [HttpPost]
-        public IActionResult SendConfirmation( string cellPhone)
+        public async Task<IActionResult> SendConfirmation(string cellPhone)
         {
-            var model = orderService.SendConfirmation(cellPhone);
+            var model = await orderService.SendConfirmationAsync(cellPhone);
 
             return View("Confirmation", model);
         }
 
-
         [HttpPost]
-        public IActionResult ConfirmCellPhone(string cellPhone, int confirmationCode)
+        public async Task<IActionResult> ConfirmCellPhone(string cellPhone, int confirmationCode)
         {
-            var model = orderService.ConfirmCellPhone(cellPhone, confirmationCode);
+            var model = await orderService.ConfirmCellPhoneAsync(cellPhone, confirmationCode);
 
             if (model.Errors.Count > 0)
                 return View("Confirmation", model);
-
             var deliveryMethods = deliveryServices.ToDictionary(service => service.Name,
                                                                 service => service.Title);
-
             return View("DeliveryMethod", deliveryMethods);
         }
 
-        //Загрузка первой формы
         [HttpPost]
-        public IActionResult StartDelivery( string serviceName)
+        public async Task<IActionResult> StartDelivery(string serviceName)
         {
-            //Загружаем необходимый нам deliveryService у которого
-            //уникальный код совпадает с переданным
-            var deliveryService = deliveryServices
-                    .Single(service => service.Name == serviceName);
-            //загружаем ордер
-            var order = orderService.GetOrder();
-            //создаем первую форму
+            var deliveryService = deliveryServices.Single(service => service.Name == serviceName);
+            var order = await orderService.GetOrderAsync();
             var form = deliveryService.FirstForm(order);
 
-            var webContractorService = webContractorServices.SingleOrDefault(service => 
-                               service.Name == serviceName);
+            var webContractorService = webContractorServices.SingleOrDefault(service => service.Name == serviceName);
             if (webContractorService == null)
                 return View("DeliveryStep", form);
 
             var returnUri = GetReturnUri(nameof(NextDelivery));
-            var redirectUri = webContractorService.StartSession(form.Parameters, returnUri);
+            var redirectUri = await webContractorService.StartSessionAsync(form.Parameters, returnUri);
 
             return Redirect(redirectUri.ToString());
         }
-
         private Uri GetReturnUri(string action)
         {
             var builder = new UriBuilder(Request.Scheme, Request.Host.Host)
@@ -123,42 +112,33 @@ namespace Store.Web.Controllers
                 Path = Url.Action(action),
                 Query = null,
             };
-
             if (Request.Host.Port != null)
                 builder.Port = Request.Host.Port.Value;
-
             return builder.Uri;
         }
 
-        //Загрузка последующей формы
         [HttpPost]
-        public IActionResult NextDelivery(string serviceName,
-                   int step, Dictionary<string, string> values)
+        public async Task<IActionResult> NextDelivery(string serviceName, int step, Dictionary<string, string> values)
         {
-            //Загружаем необходимый нам deliveryService у которого
-            //уникальный код совпадает с переданным
-            var deliveryService = deliveryServices
-                    .Single(service => service.Name == serviceName);
-            var form = deliveryService.NextForm( step, values);
+            var deliveryService = deliveryServices.Single(service => service.Name == serviceName);
 
-            //если форма финальная
-            if(!form.IsFinal)
+            var form = deliveryService.NextForm(step, values);
+            if (!form.IsFinal)
                 return View("DeliveryStep", form);
 
             var delivery = deliveryService.GetDelivery(form);
-            orderService.SetDelivery(delivery);
+            await orderService.SetDeliveryAsync(delivery);
 
             var paymentMethods = paymentServices.ToDictionary(service => service.Name,
                                                               service => service.Title);
-
             return View("PaymentMethod", paymentMethods);
         }
 
         [HttpPost]
-        public IActionResult StartPayment(string serviceName)
+        public async Task<IActionResult> StartPayment(string serviceName)
         {
             var paymentService = paymentServices.Single(service => service.Name == serviceName);
-            var order = orderService.GetOrder();
+            var order = await orderService.GetOrderAsync();
             var form = paymentService.FirstForm(order);
 
             var webContractorService = webContractorServices.SingleOrDefault(service => service.Name == serviceName);
@@ -166,13 +146,13 @@ namespace Store.Web.Controllers
                 return View("PaymentStep", form);
 
             var returnUri = GetReturnUri(nameof(NextPayment));
-            var redirectUri = webContractorService.StartSession(form.Parameters, returnUri);
+            var redirectUri = await webContractorService.StartSessionAsync(form.Parameters, returnUri);
 
             return Redirect(redirectUri.ToString());
         }
 
         [HttpPost]
-        public IActionResult NextPayment(string serviceName, int step, Dictionary<string, string> values)
+        public async Task<IActionResult> NextPayment(string serviceName, int step, Dictionary<string, string> values)
         {
             var paymentService = paymentServices.Single(service => service.Name == serviceName);
 
@@ -181,12 +161,12 @@ namespace Store.Web.Controllers
                 return View("PaymentStep", form);
 
             var payment = paymentService.GetPayment(form);
-            var model = orderService.SetPayment(payment);
+            var model = await orderService.SetPaymentAsync(payment);
 
             return View("Finish", model);
         }
 
-        
+
     }
 }
 

@@ -8,13 +8,12 @@ namespace Store
 {
     public interface IBookRepository
     {
-        Book GetById(int id);
+        Task<Book[]> GetAllByIsbnAsync(string isbn);
 
-        //метод возвращающий массив книг по ISBN
-        Book[] GetAllByIsbn(string isbn);
-        //метод возвращающий массив книг по названию
-        Book[] GetAllByTitleOrAuthor(string titleOrAuthor);
+        Task<Book[]> GetAllByTitleOrAuthorAsync(string titleOrAuthor);
 
-        Book[] GetAllByIds(IEnumerable<int> bookIds);
+        Task<Book> GetByIdAsync(int id);
+
+        Task<Book[]> GetAllByIdsAsync(IEnumerable<int> bookIds);
     }
 }
